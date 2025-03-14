@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth } from 'firebase/auth';
+import { getAuth, getRedirectResult } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
 
 const firebaseConfig = {
@@ -31,7 +31,7 @@ export default function AuthHandler() {
     const auth = getAuth();
     
     // Obsługa przekierowania po uwierzytelnieniu
-    auth.getRedirectResult()
+    getRedirectResult(auth)
       .then((result) => {
         // Przekierowanie do strony głównej po pomyślnej autoryzacji
         router.push('/dashboard');
@@ -53,4 +53,4 @@ export default function AuthHandler() {
       </div>
     </div>
   );
-} 
+}
