@@ -47,7 +47,7 @@ Panel administracyjny dla firmy 21Network, umożliwiający zarządzanie ankietam
    Utwórz plik `.env.local` w głównym katalogu projektu i dodaj następujące zmienne:
    ```
    NEXT_PUBLIC_FIREBASE_API_KEY=twój-klucz-api
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=twoja-domena.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=21network.io
    NEXT_PUBLIC_FIREBASE_PROJECT_ID=twój-projekt-id
    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=twój-bucket.appspot.com
    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=twój-sender-id
