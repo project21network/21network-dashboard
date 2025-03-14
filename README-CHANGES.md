@@ -158,15 +158,12 @@ Aby utworzyć wymagane indeksy, należy:
 
 ## Obsługa autoryzacji Firebase na niestandardowej domenie
 
-Dodano pliki obsługujące autoryzację Firebase na niestandardowej domenie (21network.io). Pliki te są niezbędne do prawidłowego działania autoryzacji po zmianie domeny z domyślnej (network-9747b.firebaseapp.com) na niestandardową:
+Dodano obsługę autoryzacji Firebase na niestandardowej domenie (dashboard.21network.io). Zmiany te są niezbędne do prawidłowego działania autoryzacji po zmianie domeny z domyślnej (network-9747b.firebaseapp.com) na niestandardową:
 
-1. **Pliki w katalogu `public/__/auth/`**:
-   - `handler.js` - Główny plik obsługujący przekierowania autoryzacji Firebase
-   - `signInCallback.html` - Strona wyświetlana po zalogowaniu, obsługująca przekierowanie do panelu
-   - `widget.html` - Strona z widgetem logowania Firebase UI
-   - `iframe.html` - Plik obsługujący autoryzację w iframe
-   - `emulator.html` - Plik obsługujący autoryzację w środowisku deweloperskim
-   - `action.html` - Plik obsługujący akcje autoryzacyjne (resetowanie hasła, weryfikacja email)
+1. **Strony obsługujące autoryzację w Next.js**:
+   - `app/__/auth/page.tsx` - Główna strona przekierowująca do odpowiednich podstron
+   - `app/__/auth/handler/page.tsx` - Obsługa przekierowań po uwierzytelnieniu
+   - `app/__/auth/action/page.tsx` - Obsługa akcji autoryzacyjnych (resetowanie hasła, weryfikacja email)
 
 2. **Funkcje i korzyści**:
    - Obsługa wszystkich metod autoryzacji Firebase na niestandardowej domenie
@@ -176,7 +173,11 @@ Dodano pliki obsługujące autoryzację Firebase na niestandardowej domenie (21n
    - Obsługa błędów i przekierowania w przypadku problemów z autoryzacją
 
 3. **Konfiguracja Firebase**:
-   - Zaktualizowano konfigurację Firebase, aby używała domeny `21network.io` jako `authDomain`
+   - Zaktualizowano konfigurację Firebase, aby używała domeny `dashboard.21network.io` jako `authDomain`
    - Zachowano kompatybilność z istniejącym projektem Firebase (network-9747b)
+
+4. **Dokumentacja**:
+   - Utworzono plik `FIREBASE_CUSTOM_DOMAIN.md` z instrukcjami konfiguracji niestandardowej domeny
+   - Zaktualizowano zmienne środowiskowe w pliku `.env.local`
 
 Ta funkcjonalność umożliwia korzystanie z autoryzacji Firebase na niestandardowej domenie, co poprawia profesjonalny wygląd aplikacji i zwiększa zaufanie użytkowników. 
