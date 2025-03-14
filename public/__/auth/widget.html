@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Firebase Authentication Widget</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
+  <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
+  <script>
+    // Konfiguracja Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB0RkLQ_7E1fzM8pF5ihhN8y0xDNhIT8jc",
+      authDomain: "21network.io",
+      projectId: "network-9747b",
+      storageBucket: "network-9747b.firebasestorage.app",
+      messagingSenderId: "68411983741",
+      appId: "1:68411983741:web:6d6a44d311b777d916ae14",
+      measurementId: "G-7Y4BWTSJQH"
+    };
+
+    // Inicjalizacja Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inicjalizacja FirebaseUI
+      const ui = new firebaseui.auth.AuthUI(firebase.auth());
+      
+      // Konfiguracja UI
+      const uiConfig = {
+        signInSuccessUrl: '/dashboard',
+        signInOptions: [
+          firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+          firebase.auth.EmailAuthProvider.PROVIDER_ID,
+        ],
+        tosUrl: '/terms-of-service',
+        privacyPolicyUrl: '/privacy-policy'
+      };
+
+      // Uruchomienie widgetu
+      ui.start('#firebaseui-auth-container', uiConfig);
+    });
+  </script>
+</head>
+<body>
+  <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif;">
+    <div style="text-align: center; max-width: 400px; width: 100%; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; background-color: white;">
+      <h2>Logowanie do 21network</h2>
+      <div id="firebaseui-auth-container"></div>
+    </div>
+  </div>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+    }
+  </style>
+</body>
+</html> 

@@ -155,3 +155,28 @@ Aby utworzyć wymagane indeksy, należy:
 2. Kliknąć linki do utworzenia indeksów
 3. Zalogować się do konsoli Firebase
 4. Kliknąć przycisk "Utwórz indeks" lub "Create index" 
+
+## Obsługa autoryzacji Firebase na niestandardowej domenie
+
+Dodano pliki obsługujące autoryzację Firebase na niestandardowej domenie (21network.io). Pliki te są niezbędne do prawidłowego działania autoryzacji po zmianie domeny z domyślnej (network-9747b.firebaseapp.com) na niestandardową:
+
+1. **Pliki w katalogu `public/__/auth/`**:
+   - `handler.js` - Główny plik obsługujący przekierowania autoryzacji Firebase
+   - `signInCallback.html` - Strona wyświetlana po zalogowaniu, obsługująca przekierowanie do panelu
+   - `widget.html` - Strona z widgetem logowania Firebase UI
+   - `iframe.html` - Plik obsługujący autoryzację w iframe
+   - `emulator.html` - Plik obsługujący autoryzację w środowisku deweloperskim
+   - `action.html` - Plik obsługujący akcje autoryzacyjne (resetowanie hasła, weryfikacja email)
+
+2. **Funkcje i korzyści**:
+   - Obsługa wszystkich metod autoryzacji Firebase na niestandardowej domenie
+   - Wsparcie dla resetowania hasła i weryfikacji adresu email
+   - Kompatybilność z emulatorem Firebase w środowisku deweloperskim
+   - Przyjazne dla użytkownika komunikaty i animacje ładowania
+   - Obsługa błędów i przekierowania w przypadku problemów z autoryzacją
+
+3. **Konfiguracja Firebase**:
+   - Zaktualizowano konfigurację Firebase, aby używała domeny `21network.io` jako `authDomain`
+   - Zachowano kompatybilność z istniejącym projektem Firebase (network-9747b)
+
+Ta funkcjonalność umożliwia korzystanie z autoryzacji Firebase na niestandardowej domenie, co poprawia profesjonalny wygląd aplikacji i zwiększa zaufanie użytkowników. 

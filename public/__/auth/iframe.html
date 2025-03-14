@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Firebase Authentication IFrame</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script>
+    // Konfiguracja Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB0RkLQ_7E1fzM8pF5ihhN8y0xDNhIT8jc",
+      authDomain: "21network.io",
+      projectId: "network-9747b",
+      storageBucket: "network-9747b.firebasestorage.app",
+      messagingSenderId: "68411983741",
+      appId: "1:68411983741:web:6d6a44d311b777d916ae14",
+      measurementId: "G-7Y4BWTSJQH"
+    };
+
+    // Inicjalizacja Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Obsługa komunikacji z rodzicem
+    window.addEventListener('message', (event) => {
+      // Sprawdzenie pochodzenia wiadomości (bezpieczeństwo)
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      const { type, payload } = event.data;
+      
+      // Obsługa różnych typów wiadomości
+      switch (type) {
+        case 'GET_AUTH_STATE':
+          // Wysłanie stanu autoryzacji do rodzica
+          firebase.auth().onAuthStateChanged((user) => {
+            window.parent.postMessage({
+              type: 'AUTH_STATE_CHANGED',
+              payload: { user: user ? { uid: user.uid, email: user.email } : null }
+            }, window.location.origin);
+          });
+          break;
+          
+        case 'SIGN_OUT':
+          // Wylogowanie użytkownika
+          firebase.auth().signOut()
+            .then(() => {
+              window.parent.postMessage({
+                type: 'SIGN_OUT_SUCCESS',
+                payload: null
+              }, window.location.origin);
+            })
+            .catch((error) => {
+              window.parent.postMessage({
+                type: 'SIGN_OUT_ERROR',
+                payload: { error: error.message }
+              }, window.location.origin);
+            });
+          break;
+      }
+    });
+
+    // Powiadomienie rodzica, że iframe jest gotowy
+    window.onload = () => {
+      window.parent.postMessage({
+        type: 'IFRAME_READY',
+        payload: null
+      }, window.location.origin);
+    };
+  </script>
+</head>
+<body>
+  <!-- Pusty iframe do komunikacji z Firebase Auth -->
+</body>
+</html> 

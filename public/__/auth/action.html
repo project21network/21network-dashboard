@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Firebase Authentication Action</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script>
+    // Konfiguracja Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB0RkLQ_7E1fzM8pF5ihhN8y0xDNhIT8jc",
+      authDomain: "21network.io",
+      projectId: "network-9747b",
+      storageBucket: "network-9747b.firebasestorage.app",
+      messagingSenderId: "68411983741",
+      appId: "1:68411983741:web:6d6a44d311b777d916ae14",
+      measurementId: "G-7Y4BWTSJQH"
+    };
+
+    // Inicjalizacja Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Funkcja do pobierania parametrów z URL
+    function getParameterByName(name) {
+      const url = window.location.href;
+      name = name.replace(/[\[\]]/g, '\\$&');
+      const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+      const results = regex.exec(url);
+      if (!results) return null;
+      if (!results[2]) return '';
+      return decodeURIComponent(results[2].replace(/\+/g, ' '));
+    }
+
+    // Obsługa akcji autoryzacyjnych
+    document.addEventListener('DOMContentLoaded', function() {
+      const mode = getParameterByName('mode');
+      const actionCode = getParameterByName('oobCode');
+      const continueUrl = getParameterByName('continueUrl') || '/dashboard';
+      
+      const statusElement = document.getElementById('status');
+      const messageElement = document.getElementById('message');
+      const spinnerElement = document.getElementById('spinner');
+      const formElement = document.getElementById('resetPasswordForm');
+      
+      // Ukryj formularz resetowania hasła domyślnie
+      if (formElement) {
+        formElement.style.display = 'none';
+      }
+
+      if (!actionCode) {
+        statusElement.textContent = 'Błąd';
+        messageElement.textContent = 'Brak wymaganego kodu akcji.';
+        spinnerElement.style.display = 'none';
+        return;
+      }
+
+      switch (mode) {
+        case 'resetPassword':
+          // Wyświetl formularz resetowania hasła
+          statusElement.textContent = 'Resetowanie hasła';
+          messageElement.textContent = 'Wprowadź nowe hasło:';
+          spinnerElement.style.display = 'none';
+          
+          if (formElement) {
+            formElement.style.display = 'block';
+            
+            // Obsługa formularza resetowania hasła
+            formElement.addEventListener('submit', function(e) {
+              e.preventDefault();
+              
+              const newPassword = document.getElementById('newPassword').value;
+              
+              // Weryfikacja kodu i ustawienie nowego hasła
+              firebase.auth().verifyPasswordResetCode(actionCode)
+                .then(() => {
+                  return firebase.auth().confirmPasswordReset(actionCode, newPassword);
+                })
+                .then(() => {
+                  statusElement.textContent = 'Sukces';
+                  messageElement.textContent = 'Hasło zostało zmienione. Za chwilę nastąpi przekierowanie.';
+                  formElement.style.display = 'none';
+                  
+                  // Przekierowanie po udanym resecie hasła
+                  setTimeout(() => {
+                    window.location.href = '/auth/login?reset=success';
+                  }, 3000);
+                })
+                .catch((error) => {
+                  statusElement.textContent = 'Błąd';
+                  messageElement.textContent = 'Wystąpił błąd: ' + error.message;
+                });
+            });
+          }
+          break;
+          
+        case 'verifyEmail':
+          // Weryfikacja adresu email
+          statusElement.textContent = 'Weryfikacja adresu email';
+          messageElement.textContent = 'Trwa weryfikacja...';
+          
+          firebase.auth().applyActionCode(actionCode)
+            .then(() => {
+              statusElement.textContent = 'Sukces';
+              messageElement.textContent = 'Twój adres email został zweryfikowany. Za chwilę nastąpi przekierowanie.';
+              spinnerElement.style.display = 'none';
+              
+              // Przekierowanie po udanej weryfikacji
+              setTimeout(() => {
+                window.location.href = continueUrl || '/dashboard';
+              }, 3000);
+            })
+            .catch((error) => {
+              statusElement.textContent = 'Błąd';
+              messageElement.textContent = 'Wystąpił błąd: ' + error.message;
+              spinnerElement.style.display = 'none';
+            });
+          break;
+          
+        case 'recoverEmail':
+          // Odzyskiwanie adresu email
+          statusElement.textContent = 'Odzyskiwanie adresu email';
+          messageElement.textContent = 'Trwa odzyskiwanie...';
+          
+          firebase.auth().checkActionCode(actionCode)
+            .then((info) => {
+              return firebase.auth().applyActionCode(actionCode);
+            })
+            .then(() => {
+              statusElement.textContent = 'Sukces';
+              messageElement.textContent = 'Twój adres email został odzyskany. Za chwilę nastąpi przekierowanie.';
+              spinnerElement.style.display = 'none';
+              
+              // Przekierowanie po udanym odzyskaniu
+              setTimeout(() => {
+                window.location.href = '/auth/login?recover=success';
+              }, 3000);
+            })
+            .catch((error) => {
+              statusElement.textContent = 'Błąd';
+              messageElement.textContent = 'Wystąpił błąd: ' + error.message;
+              spinnerElement.style.display = 'none';
+            });
+          break;
+          
+        default:
+          statusElement.textContent = 'Błąd';
+          messageElement.textContent = 'Nieznany typ akcji.';
+          spinnerElement.style.display = 'none';
+      }
+    });
+  </script>
+</head>
+<body>
+  <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif;">
+    <div style="text-align: center; max-width: 400px; width: 100%; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; background-color: white;">
+      <h2 id="status">Przetwarzanie...</h2>
+      <p id="message">Proszę czekać, trwa przetwarzanie akcji.</p>
+      
+      <!-- Formularz resetowania hasła -->
+      <form id="resetPasswordForm" style="margin-top: 20px; text-align: left;">
+        <div style="margin-bottom: 15px;">
+          <label for="newPassword" style="display: block; margin-bottom: 5px; font-weight: bold;">Nowe hasło:</label>
+          <input type="password" id="newPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+        </div>
+        <button type="submit" style="background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%;">Zmień hasło</button>
+      </form>
+      
+      <!-- Spinner -->
+      <div id="spinner" style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; margin: 20px auto; animation: spin 2s linear infinite;"></div>
+    </div>
+  </div>
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+    }
+  </style>
+</body>
+</html> 
