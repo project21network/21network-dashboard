@@ -161,23 +161,32 @@ Aby utworzyć wymagane indeksy, należy:
 Dodano obsługę autoryzacji Firebase na niestandardowej domenie (dashboard.21network.io). Zmiany te są niezbędne do prawidłowego działania autoryzacji po zmianie domeny z domyślnej (network-9747b.firebaseapp.com) na niestandardową:
 
 1. **Strony obsługujące autoryzację w Next.js**:
-   - `app/__/auth/page.tsx` - Główna strona przekierowująca do odpowiednich podstron
-   - `app/__/auth/handler/page.tsx` - Obsługa przekierowań po uwierzytelnieniu
-   - `app/__/auth/action/page.tsx` - Obsługa akcji autoryzacyjnych (resetowanie hasła, weryfikacja email)
+   - `app/auth/firebase-handler/page.tsx` - Obsługa przekierowań po uwierzytelnieniu
+   - `app/auth/firebase-action/page.tsx` - Obsługa akcji autoryzacyjnych (resetowanie hasła, weryfikacja email)
 
-2. **Funkcje i korzyści**:
+2. **Middleware do przekierowań**:
+   - Plik `middleware.ts` zawiera logikę przekierowującą żądania z ścieżki `/__/auth/*` do odpowiednich stron w aplikacji
+   - Dzięki temu Firebase Auth może używać standardowych ścieżek, które są automatycznie przekierowywane do naszych stron
+
+3. **Funkcje i korzyści**:
    - Obsługa wszystkich metod autoryzacji Firebase na niestandardowej domenie
    - Wsparcie dla resetowania hasła i weryfikacji adresu email
    - Kompatybilność z emulatorem Firebase w środowisku deweloperskim
    - Przyjazne dla użytkownika komunikaty i animacje ładowania
    - Obsługa błędów i przekierowania w przypadku problemów z autoryzacją
 
-3. **Konfiguracja Firebase**:
+4. **Konfiguracja Firebase**:
    - Zaktualizowano konfigurację Firebase, aby używała domeny `dashboard.21network.io` jako `authDomain`
    - Zachowano kompatybilność z istniejącym projektem Firebase (network-9747b)
 
-4. **Dokumentacja**:
+5. **Dokumentacja**:
    - Utworzono plik `FIREBASE_CUSTOM_DOMAIN.md` z instrukcjami konfiguracji niestandardowej domeny
    - Zaktualizowano zmienne środowiskowe w pliku `.env.local`
+
+6. **Rozwiązanie problemów z przekierowaniami**:
+   - Zmieniono metody logowania z `signInWithPopup` na `signInWithRedirect` dla Google i Apple
+   - Dodano obsługę błędów i komunikaty przyjazne dla użytkownika
+   - Zaimplementowano stronę wyświetlającą status logowania (ładowanie, sukces, błąd)
+   - Rozwiązano problem z pętlą przekierowań podczas logowania
 
 Ta funkcjonalność umożliwia korzystanie z autoryzacji Firebase na niestandardowej domenie, co poprawia profesjonalny wygląd aplikacji i zwiększa zaufanie użytkowników. 

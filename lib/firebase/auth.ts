@@ -7,7 +7,7 @@ import {
     User,
     UserCredential,
     GoogleAuthProvider,
-    signInWithPopup,
+    signInWithRedirect,
     OAuthProvider,
   } from "firebase/auth";
   import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -88,8 +88,9 @@ import {
   export async function loginWithGoogle() {
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      return result.user;
+      await signInWithRedirect(auth, provider);
+      // Uwaga: Nie zwracamy użytkownika, ponieważ signInWithRedirect przekierowuje stronę
+      // Wynik będzie dostępny po przekierowaniu poprzez getRedirectResult()
     } catch (error) {
       console.error("Error logging in with Google:", error);
       throw error;
@@ -102,8 +103,9 @@ import {
       provider.addScope('email');
       provider.addScope('name');
       
-      const result = await signInWithPopup(auth, provider);
-      return result.user;
+      await signInWithRedirect(auth, provider);
+      // Uwaga: Nie zwracamy użytkownika, ponieważ signInWithRedirect przekierowuje stronę
+      // Wynik będzie dostępny po przekierowaniu poprzez getRedirectResult()
     } catch (error) {
       console.error("Error logging in with Apple:", error);
       throw error;

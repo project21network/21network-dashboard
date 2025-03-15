@@ -8,16 +8,18 @@ export function middleware(request: NextRequest) {
   // Przekierowanie /__/auth/handler do /auth/firebase-handler
   if (pathname.startsWith('/__/auth/handler')) {
     url.pathname = '/auth/firebase-handler';
+    // Zachowaj wszystkie parametry URL
     return NextResponse.redirect(url);
   }
 
   // Przekierowanie /__/auth/action do /auth/firebase-action
   if (pathname.startsWith('/__/auth/action')) {
     url.pathname = '/auth/firebase-action';
+    // Zachowaj wszystkie parametry URL
     return NextResponse.redirect(url);
   }
 
-  // Przekierowanie innych ścieżek /__/auth/* do /auth/firebase-handler
+  // Przekierowanie innych ścieżek /__/auth/* do /auth/firebase-handler lub /auth/firebase-action
   if (pathname.startsWith('/__/auth/')) {
     // Sprawdź, czy to jest akcja (resetowanie hasła, weryfikacja email)
     const mode = searchParams.get('mode');
@@ -28,6 +30,7 @@ export function middleware(request: NextRequest) {
     } else {
       url.pathname = '/auth/firebase-handler';
     }
+    // Zachowaj wszystkie parametry URL
     return NextResponse.redirect(url);
   }
 
