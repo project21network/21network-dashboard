@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAuth, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, checkActionCode } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
@@ -15,7 +15,19 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-export default function FirebaseAuthAction() {
+function LoadingSpinner() {
+  return (
+    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+      <div className="text-center max-w-md w-full p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-2">Przetwarzanie...</h2>
+        <p className="text-gray-600 mb-4">Proszę czekać, trwa przetwarzanie akcji.</p>
+        <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto mt-4"></div>
+      </div>
+    </div>
+  );
+}
+
+function FirebaseAuthActionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -177,5 +189,13 @@ export default function FirebaseAuthAction() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function FirebaseAuthAction() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <FirebaseAuthActionContent />
+    </Suspense>
   );
 } 
