@@ -15,7 +15,7 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-export default function AuthAction() {
+export default function FirebaseAuthAction() {
   const router = useRouter();
   const searchParams = useSearchParams();
   

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getAuth, getRedirectResult } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
 
@@ -15,8 +15,9 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-export default function AuthHandler() {
+export default function FirebaseAuthHandler() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   useEffect(() => {
     // Inicjalizacja Firebase, jeśli jeszcze nie jest zainicjalizowana
@@ -30,6 +31,18 @@ export default function AuthHandler() {
 
     const auth = getAuth();
     
+    // Sprawdź, czy to jest akcja (resetowanie hasła, weryfikacja email)
+    const mode = searchParams.get('mode');
+    const oobCode = searchParams.get('oobCode');
+    
+    if (mode && oobCode) {
+      // Obsługa akcji autoryzacyjnych
+      router.push(`/auth/firebase-action?mode=${mode}&oobCode=${oobCode}${
+        searchParams.get('continueUrl') ? `&continueUrl=${searchParams.get('continueUrl')}` : ''
+      }`);
+      return;
+    }
+    
     // Obsługa przekierowania po uwierzytelnieniu
     getRedirectResult(auth)
       .then((result) => {
@@ -42,7 +55,7 @@ export default function AuthHandler() {
         // Przekierowanie do strony logowania w przypadku błędu
         router.push(`/auth/login?error=${encodeURIComponent(error.message)}`);
       });
-  }, [router]);
+  }, [router, searchParams]);
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -53,4 +66,4 @@ export default function AuthHandler() {
       </div>
     </div>
   );
-}
+} 
