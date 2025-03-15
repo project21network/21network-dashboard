@@ -7,7 +7,7 @@ import {
     User,
     UserCredential,
     GoogleAuthProvider,
-    signInWithPopup,
+    signInWithRedirect,
     OAuthProvider,
   } from "firebase/auth";
   import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -88,8 +88,10 @@ import {
   export async function loginWithGoogle() {
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      return result.user;
+      provider.setCustomParameters({
+        'auth_domain': 'dashboard.21network.io'
+      });
+      await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Error logging in with Google:", error);
       throw error;
