@@ -10,11 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { loginUser, loginWithGoogle, loginWithApple } from "@/lib/firebase/auth";
+import { loginUser, loginWithGoogle } from "@/lib/firebase/auth";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { FcGoogle } from "react-icons/fc";
-import { FaApple } from "react-icons/fa";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Proszę podać poprawny adres email" }),
@@ -61,20 +60,6 @@ export function LoginForm() {
     }
   };
 
-  const handleAppleLogin = async () => {
-    setIsLoading(true);
-    try {
-      await loginWithApple();
-      toast.success("Zalogowano pomyślnie przez Apple");
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Błąd logowania przez Apple:", error);
-      toast.error("Nie udało się zalogować przez Apple");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -93,16 +78,6 @@ export function LoginForm() {
           >
             <FcGoogle className="mr-2 h-4 w-4" />
             Kontynuuj z Google
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={handleAppleLogin}
-            disabled={isLoading}
-          >
-            <FaApple className="mr-2 h-4 w-4" />
-            Kontynuuj z Apple
           </Button>
 
           <div className="relative">
