@@ -158,35 +158,25 @@ Aby utworzyć wymagane indeksy, należy:
 
 ## Obsługa autoryzacji Firebase na niestandardowej domenie
 
-Dodano obsługę autoryzacji Firebase na niestandardowej domenie (dashboard.21network.io). Zmiany te są niezbędne do prawidłowego działania autoryzacji po zmianie domeny z domyślnej (network-9747b.firebaseapp.com) na niestandardową:
+Dodano pliki obsługujące autoryzację Firebase na niestandardowej domenie (21network.io). Pliki te są niezbędne do prawidłowego działania autoryzacji po zmianie domeny z domyślnej (network-9747b.firebaseapp.com) na niestandardową:
 
-1. **Strony obsługujące autoryzację w Next.js**:
-   - `app/auth/firebase-handler/page.tsx` - Obsługa przekierowań po uwierzytelnieniu
-   - `app/auth/firebase-action/page.tsx` - Obsługa akcji autoryzacyjnych (resetowanie hasła, weryfikacja email)
+1. **Pliki w katalogu `public/__/auth/`**:
+   - `handler.js` - Główny plik obsługujący przekierowania autoryzacji Firebase
+   - `signInCallback.html` - Strona wyświetlana po zalogowaniu, obsługująca przekierowanie do panelu
+   - `widget.html` - Strona z widgetem logowania Firebase UI
+   - `iframe.html` - Plik obsługujący autoryzację w iframe
+   - `emulator.html` - Plik obsługujący autoryzację w środowisku deweloperskim
+   - `action.html` - Plik obsługujący akcje autoryzacyjne (resetowanie hasła, weryfikacja email)
 
-2. **Middleware do przekierowań**:
-   - Plik `middleware.ts` zawiera logikę przekierowującą żądania z ścieżki `/__/auth/*` do odpowiednich stron w aplikacji
-   - Dzięki temu Firebase Auth może używać standardowych ścieżek, które są automatycznie przekierowywane do naszych stron
-
-3. **Funkcje i korzyści**:
+2. **Funkcje i korzyści**:
    - Obsługa wszystkich metod autoryzacji Firebase na niestandardowej domenie
    - Wsparcie dla resetowania hasła i weryfikacji adresu email
    - Kompatybilność z emulatorem Firebase w środowisku deweloperskim
    - Przyjazne dla użytkownika komunikaty i animacje ładowania
    - Obsługa błędów i przekierowania w przypadku problemów z autoryzacją
 
-4. **Konfiguracja Firebase**:
-   - Zaktualizowano konfigurację Firebase, aby używała domeny `dashboard.21network.io` jako `authDomain`
+3. **Konfiguracja Firebase**:
+   - Zaktualizowano konfigurację Firebase, aby używała domeny `21network.io` jako `authDomain`
    - Zachowano kompatybilność z istniejącym projektem Firebase (network-9747b)
-
-5. **Dokumentacja**:
-   - Utworzono plik `FIREBASE_CUSTOM_DOMAIN.md` z instrukcjami konfiguracji niestandardowej domeny
-   - Zaktualizowano zmienne środowiskowe w pliku `.env.local`
-
-6. **Rozwiązanie problemów z przekierowaniami**:
-   - Zmieniono metody logowania z `signInWithPopup` na `signInWithRedirect` dla Google i Apple
-   - Dodano obsługę błędów i komunikaty przyjazne dla użytkownika
-   - Zaimplementowano stronę wyświetlającą status logowania (ładowanie, sukces, błąd)
-   - Rozwiązano problem z pętlą przekierowań podczas logowania
 
 Ta funkcjonalność umożliwia korzystanie z autoryzacji Firebase na niestandardowej domenie, co poprawia profesjonalny wygląd aplikacji i zwiększa zaufanie użytkowników. 

@@ -54,10 +54,12 @@ export function LoginForm() {
     setIsLoading(true);
     try {
       await loginWithGoogle();
-      toast.info("Trwa przekierowanie do Google...");
+      toast.success("Zalogowano pomyślnie przez Google");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Błąd logowania przez Google:", error);
       toast.error("Nie udało się zalogować przez Google");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -66,10 +68,12 @@ export function LoginForm() {
     setIsLoading(true);
     try {
       await loginWithApple();
-      toast.info("Trwa przekierowanie do Apple...");
+      toast.success("Zalogowano pomyślnie przez Apple");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Błąd logowania przez Apple:", error);
       toast.error("Nie udało się zalogować przez Apple");
+    } finally {
       setIsLoading(false);
     }
   };
