@@ -53,9 +53,12 @@ export function LoginForm() {
     setIsLoading(true);
     try {
       await loginWithGoogle();
+      toast.success("Zalogowano pomyślnie przez Google");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Błąd logowania przez Google:", error);
       toast.error("Nie udało się zalogować przez Google");
+    } finally {
       setIsLoading(false);
     }
   };
