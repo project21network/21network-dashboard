@@ -8,6 +8,11 @@ const inter = Inter({ subsets: ["latin", "latin-ext"] });
 export const metadata: Metadata = {
   title: "Panel administracyjny | 21Network",
   description: "Panel administracyjny dla strony 21network.io",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

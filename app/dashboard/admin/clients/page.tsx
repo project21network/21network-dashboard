@@ -32,6 +32,7 @@ import { UserProfile } from "@/lib/types/user";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import { SearchOutlined, UserOutlined, EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
+import { Eye, Edit, Trash } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminClientsPage() {
@@ -180,18 +181,18 @@ export default function AdminClientsPage() {
                             <MoreOutlined />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewClient(client)}>
-                            <UserOutlined className="mr-2" /> Szczegóły
+                        <DropdownMenuContent align="end" className="bg-white shadow-lg border border-gray-200">
+                          <DropdownMenuItem onClick={() => handleViewClient(client)} className="hover:bg-gray-50">
+                            <Eye className="mr-2 h-4 w-4" /> Podgląd
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditClient(client)}>
-                            <EditOutlined className="mr-2" /> Edytuj
+                          <DropdownMenuItem onClick={() => handleEditClient(client)} className="hover:bg-gray-50">
+                            <Edit className="mr-2 h-4 w-4" /> Edytuj
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleDeleteClient(client)}
-                            className="text-red-600"
+                            className="text-red-600 hover:bg-red-50"
                           >
-                            <DeleteOutlined className="mr-2" /> Usuń
+                            <Trash className="mr-2 h-4 w-4" /> Usuń
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -206,7 +207,7 @@ export default function AdminClientsPage() {
       
       {/* Dialog ze szczegółami klienta */}
       <Dialog open={!!selectedClient && !isDeleteDialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="sm:max-w-md bg-white">
+        <DialogContent className="sm:max-w-[600px] bg-white">
           <DialogHeader>
             <DialogTitle>
               {isEditMode ? "Edycja klienta" : "Szczegóły klienta"}
@@ -221,16 +222,16 @@ export default function AdminClientsPage() {
           
           {selectedClient && (
             <div className="space-y-4 py-4">
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-6">
                 {selectedClient.photoURL ? (
                   <img 
                     src={selectedClient.photoURL} 
                     alt={selectedClient.displayName}
-                    className="rounded-full w-24 h-24 object-cover" 
+                    className="rounded-full w-28 h-28 object-cover border-2 border-gray-100 shadow-sm" 
                   />
                 ) : (
-                  <div className="rounded-full w-24 h-24 bg-gray-100 flex items-center justify-center text-gray-400">
-                    <UserOutlined style={{ fontSize: 32 }} />
+                  <div className="rounded-full w-28 h-28 bg-gray-100 flex items-center justify-center text-gray-400 border-2 border-gray-100 shadow-sm">
+                    <UserOutlined style={{ fontSize: 36 }} />
                   </div>
                 )}
               </div>
@@ -268,30 +269,42 @@ export default function AdminClientsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="text-sm font-medium">Imię i nazwisko:</div>
-                  <div>{selectedClient.displayName}</div>
-                  
-                  <div className="text-sm font-medium">Email:</div>
-                  <div>{selectedClient.email}</div>
-                  
-                  <div className="text-sm font-medium">Firma:</div>
-                  <div>{selectedClient.company || "—"}</div>
-                  
-                  <div className="text-sm font-medium">Telefon:</div>
-                  <div>{selectedClient.phone || "—"}</div>
-                  
-                  <div className="text-sm font-medium">Data rejestracji:</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6 p-4 bg-gray-50 rounded-lg">
                   <div>
-                    {format(selectedClient.createdAt, "dd MMMM yyyy, HH:mm", { locale: pl })}
+                    <div className="text-sm font-medium text-muted-foreground mb-1">Imię i nazwisko</div>
+                    <div className="font-medium">{selectedClient.displayName}</div>
                   </div>
                   
-                  <div className="text-sm font-medium">Ostatnie logowanie:</div>
                   <div>
-                    {selectedClient.lastLogin
-                      ? format(selectedClient.lastLogin, "dd MMMM yyyy, HH:mm", { locale: pl })
-                      : "—"
-                    }
+                    <div className="text-sm font-medium text-muted-foreground mb-1">Email</div>
+                    <div className="font-medium">{selectedClient.email}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground mb-1">Firma</div>
+                    <div>{selectedClient.company || "—"}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground mb-1">Telefon</div>
+                    <div>{selectedClient.phone || "—"}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground mb-1">Data rejestracji</div>
+                    <div>
+                      {format(selectedClient.createdAt, "dd MMMM yyyy, HH:mm", { locale: pl })}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground mb-1">Ostatnie logowanie</div>
+                    <div>
+                      {selectedClient.lastLogin
+                        ? format(selectedClient.lastLogin, "dd MMMM yyyy, HH:mm", { locale: pl })
+                        : "—"
+                      }
+                    </div>
                   </div>
                 </div>
               )}
@@ -327,7 +340,7 @@ export default function AdminClientsPage() {
       
       {/* Dialog potwierdzenia usunięcia */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-white">
+        <DialogContent className="sm:max-w-md bg-white shadow-lg">
           <DialogHeader>
             <DialogTitle>Potwierdź usunięcie</DialogTitle>
             <DialogDescription>
@@ -335,22 +348,27 @@ export default function AdminClientsPage() {
             </DialogDescription>
           </DialogHeader>
           
-          {selectedClient && (
-            <div className="py-4">
-              <p className="mb-4">
-                Zamierzasz usunąć klienta: <strong>{selectedClient.displayName}</strong> ({selectedClient.email})
-              </p>
-              
-              <DialogFooter className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-                  Anuluj
-                </Button>
-                <Button variant="destructive" onClick={handleConfirmDelete}>
-                  Usuń
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
+          <div className="py-4">
+            {selectedClient && (
+              <div className="p-4 bg-red-50 border border-red-100 rounded-lg mb-4">
+                <p className="text-red-800 font-medium">
+                  Usuwasz klienta: {selectedClient.displayName}
+                </p>
+                <p className="text-red-700 text-sm mt-1">
+                  Email: {selectedClient.email}
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Anuluj
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Usuń klienta
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

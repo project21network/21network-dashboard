@@ -22,11 +22,29 @@ import { pl } from "date-fns/locale";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { SeoSubmission } from "@/lib/types/seo-submission";
+import { SeoSubmission, SeoKeyword } from "@/lib/types/seo-submission";
 import { FormSubmission, CustomColor, CustomSection } from "@/lib/types/form-submission";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "sonner";
+
+interface Competitor {
+  url: string;
+  notes?: string;
+  id: string;
+}
+
+interface CustomGoal {
+  description: string;
+  id: string;
+}
+
+interface CustomService {
+  id: string;
+  name: string;
+  description?: string;
+}
 
 function getStatusColor(status: OrderStatus): string {
   switch (status) {
@@ -237,6 +255,7 @@ export default function ClientOrdersPage() {
   
   // Funkcje obsługujące dialog z ankietami SEO
   const handleOpenSeoDetails = (submission: SeoSubmission) => {
+    console.log('Opening SEO details:', JSON.stringify(submission, null, 2));
     setSelectedSeoSubmission(submission);
     setIsSeoDialogOpen(true);
   };
@@ -461,10 +480,10 @@ export default function ClientOrdersPage() {
                         <div className="flex flex-col space-y-2">
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                              <span className="font-medium">Styl strony:</span> {submission.websiteStyle || "Nie określono"}
+                              <span className="text-sm font-medium">Styl strony:</span> {submission.websiteStyle || "Nie określono"}
                             </div>
                             <div>
-                              <span className="font-medium">Sekcje:</span> {submission.selectedSections?.slice(0, 2).join(", ")}
+                              <span className="text-sm font-medium">Sekcje:</span> {submission.selectedSections?.slice(0, 2).join(", ")}
                               {submission.selectedSections?.length > 2 && ` +${submission.selectedSections.length - 2}`}
                             </div>
                           </div>
@@ -604,11 +623,10 @@ export default function ClientOrdersPage() {
                     <div className="flex flex-col space-y-2">
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <span className="font-medium">Styl strony:</span> {submission.websiteStyle || "Nie określono"}
+                          <span className="text-sm font-medium">Styl strony:</span> {submission.websiteStyle || "Nie określono"}
                         </div>
                         <div>
-                          <span className="font-medium">Sekcje:</span> {submission.selectedSections?.slice(0, 2).join(", ")}
-                          {submission.selectedSections?.length > 2 && ` +${submission.selectedSections.length - 2}`}
+                          <span className="text-sm font-medium">Typ treści:</span> {submission.contentType || "Nie określono"}
                         </div>
                       </div>
                       <div className="mt-2 flex justify-end">
@@ -681,12 +699,67 @@ export default function ClientOrdersPage() {
 }
 
 // Komponent wyświetlający szczegóły ankiety SEO dla klienta
-function ClientSeoSubmissionDetails({ submission }: { submission: SeoSubmission }) {
+function ClientSeoSubmissionDetails({ submission }: { submission: any }): React.JSX.Element {
+  console.log("Rendering SEO details:", submission);
+
   // Bezpieczne renderowanie wartości
-  const renderValue = (value: any, defaultValue: string = "Nie określono") => {
-    return value !== undefined && value !== null && value !== "" ? value : defaultValue;
-  };
-  
+  function renderValue(value: any): React.ReactNode {
+    console.log("Rendering value:", value);
+    
+    // Obsługa wartości undefined, null lub pusty string
+    if (value === undefined || value === null || value === '') {
+      return <span className="text-gray-400">Nie podano</span>;
+    }
+    
+    // Obsługa tablic
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return <span className="text-gray-400">Nie podano</span>;
+      }
+      
+      return value.map((item, index) => (
+        <span key={index} className="mr-2">
+          {renderValue(item)}
+          {index < value.length - 1 ? ', ' : ''}
+        </span>
+      ));
+    }
+    
+    // Obsługa obiektów
+    if (typeof value === 'object') {
+      // Obsługa SeoGoals
+      if ('traffic' in value || 'conversion' in value || 'positions' in value || 'custom' in value) {
+        return <span className="text-gray-400">Szczegóły poniżej</span>;
+      }
+      
+      // Obsługa obiektów z URL
+      if ('url' in value) {
+        return value.url;
+      }
+      
+      // Obsługa obiektów z nazwą
+      if ('name' in value) {
+        return value.name;
+      }
+      
+      // Obsługa obiektów z opisem
+      if ('description' in value) {
+        return value.description;
+      }
+      
+      // Dla innych obiektów, próbujemy wyciągnąć pierwszą wartość
+      const values = Object.values(value);
+      if (values.length > 0 && values[0] !== null && values[0] !== undefined) {
+        return String(values[0]);
+      }
+      
+      return <span className="text-gray-400">Złożony obiekt</span>;
+    }
+    
+    // Obsługa innych typów
+    return String(value);
+  }
+
   // Formatowanie daty
   const formatDateValue = (date: any) => {
     if (date instanceof Date) {
@@ -698,193 +771,290 @@ function ClientSeoSubmissionDetails({ submission }: { submission: SeoSubmission 
     }
     return "Nieznana data";
   };
-  
-  // Mapowanie budżetu na czytelną wartość
-  const getBudgetLabel = (budget: string, customBudget: string) => {
-    if (budget === 'custom' && customBudget) return customBudget;
-    
-    const budgetMap: Record<string, string> = {
-      'low': 'Niski',
-      'medium': 'Średni',
-      'high': 'Wysoki',
-      'enterprise': 'Enterprise'
-    };
-    
-    return budgetMap[budget] || 'Nie określono';
-  };
-  
-  // Mapowanie ram czasowych na czytelną wartość
-  const getTimeframeLabel = (timeframe: string) => {
-    const timeframeMap: Record<string, string> = {
-      'short': 'Krótki termin (1-3 miesiące)',
-      'medium': 'Średni termin (3-6 miesięcy)',
-      'long': 'Długi termin (6+ miesięcy)'
-    };
-    
-    return timeframeMap[timeframe] || 'Nie określono';
-  };
-  
+
   return (
-    <div className="space-y-4 p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Podstawowe dane */}
+      <div>
+        <h3 className="text-lg font-medium">Podstawowe dane</h3>
+        <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Dane podstawowe</h3>
-            <div className="mt-1 space-y-1 text-sm">
-              <div>
-                <span className="font-medium">URL strony:</span> {renderValue(submission.websiteUrl)}
-              </div>
-              <div>
-                <span className="font-medium">Data utworzenia:</span>{" "}
-                {formatDateValue(submission.createdAt)}
-              </div>
-              <div>
-                <span className="font-medium">Budżet:</span> {getBudgetLabel(submission.budget, submission.customBudget)}
-              </div>
-              <div>
-                <span className="font-medium">Ramy czasowe:</span> {getTimeframeLabel(submission.targetTimeframe)}
-              </div>
+            <p className="text-sm font-medium text-gray-500">URL strony</p>
+            <p className="mt-1">{renderValue(submission.websiteUrl)}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Opis</p>
+            <p className="mt-1">{renderValue(submission.description)}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Budżet</p>
+            <p className="mt-1">{renderValue(submission.budget)}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Czas realizacji</p>
+            <p className="mt-1">{renderValue(submission.timeframe)}</p>
+          </div>
+          {submission.createdAt && (
+            <div>
+              <p className="text-sm font-medium text-gray-500">Data utworzenia</p>
+              <p className="mt-1">{formatDateValue(submission.createdAt)}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Oczekiwania */}
+      {submission.expectations && (
+        <div>
+          <h3 className="text-lg font-medium">Oczekiwania</h3>
+          <div className="mt-2">
+            <p className="text-sm font-medium text-gray-500">Oczekiwania</p>
+            <p className="mt-1">{renderValue(submission.expectations)}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Wybrane usługi */}
+      {submission.selectedServices && submission.selectedServices.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium">Wybrane usługi</h3>
+          <div className="mt-2">
+            <div className="flex flex-wrap gap-2">
+              {submission.selectedServices.map((service: any, index: number) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                >
+                  {renderValue(service)}
+                </span>
+              ))}
             </div>
           </div>
-          
-          {/* Opis */}
-          {submission.description && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Opis projektu</h3>
-              <div className="mt-1 p-2 bg-gray-50 rounded-md">
-                <p className="text-sm whitespace-pre-wrap">{renderValue(submission.description)}</p>
-              </div>
-            </div>
-          )}
-          
-          {/* Oczekiwania */}
-          {submission.expectations && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Oczekiwania</h3>
-              <div className="mt-1 p-2 bg-gray-50 rounded-md">
-                <p className="text-sm whitespace-pre-wrap">{renderValue(submission.expectations)}</p>
-              </div>
-            </div>
-          )}
         </div>
-        
-        <div className="space-y-4">
-          {/* Wybrane usługi */}
-          {submission.selectedServices.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Wybrane usługi SEO</h3>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {submission.selectedServices.map((service, index) => (
-                  <div key={`service-${index}`} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                    {service}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Wybrane słowa kluczowe */}
-          {submission.selectedKeywords.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Wybrane słowa kluczowe</h3>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {submission.selectedKeywords.map((keyword, index) => (
-                  <div key={`keyword-${index}`} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                    {keyword}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Konkurenci */}
-          {submission.competitors.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Konkurenci</h3>
-              <div className="mt-1 p-2 bg-gray-50 rounded-md">
-                <ul className="list-disc pl-4 space-y-1 text-sm">
-                  {submission.competitors.map((competitor, index) => (
-                    <li key={`competitor-${index}`}>{competitor}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-          
-          {/* Wyzwania */}
-          {submission.challenges.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Wyzwania</h3>
-              <div className="mt-1 p-2 bg-gray-50 rounded-md">
-                <ul className="list-disc pl-4 space-y-1 text-sm">
-                  {submission.challenges.map((challenge, index) => (
-                    <li key={`challenge-${index}`}>{challenge}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Cele SEO */}
+      )}
+
+      {/* Słowa kluczowe */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground">Cele SEO</h3>
-        <div className="mt-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {submission.goals.traffic.length > 0 && (
-            <div className="border rounded-md p-2">
-              <h4 className="text-xs font-semibold mb-1">Cele ruchu</h4>
-              <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                {submission.goals.traffic.map((goal, index) => (
-                  <li key={`traffic-${index}`}>{goal}</li>
-                ))}
-              </ul>
+        <h3 className="text-lg font-medium">Słowa kluczowe</h3>
+        
+        {/* Wybrane słowa kluczowe */}
+        {submission.selectedKeywords && submission.selectedKeywords.length > 0 && (
+          <div className="mt-2">
+            <p className="text-sm font-medium text-gray-500">Wybrane słowa kluczowe</p>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {submission.selectedKeywords.map((keyword: any, index: number) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                >
+                  {renderValue(keyword)}
+                </span>
+              ))}
             </div>
-          )}
-          
-          {submission.goals.conversion.length > 0 && (
-            <div className="border rounded-md p-2">
-              <h4 className="text-xs font-semibold mb-1">Cele konwersji</h4>
-              <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                {submission.goals.conversion.map((goal, index) => (
-                  <li key={`conversion-${index}`}>{goal}</li>
-                ))}
-              </ul>
+          </div>
+        )}
+        
+        {/* Własne słowa kluczowe */}
+        {Array.isArray(submission.customKeywords) && submission.customKeywords.length > 0 && (
+          <div className="mt-2">
+            <p className="text-sm font-medium text-gray-500">Własne słowa kluczowe</p>
+            <div className="space-y-2 mt-1">
+              {submission.customKeywords.map((keyword: any, index: number) => (
+                <div key={index} className="p-2 bg-gray-50 rounded">
+                  <p className="font-medium">{renderValue(keyword.name)}</p>
+                  {keyword.description && (
+                    <p className="text-sm text-gray-600 mt-1">{renderValue(keyword.description)}</p>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-          
-          {submission.goals.positions.length > 0 && (
-            <div className="border rounded-md p-2">
-              <h4 className="text-xs font-semibold mb-1">Cele pozycji</h4>
-              <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                {submission.goals.positions.map((goal, index) => (
-                  <li key={`position-${index}`}>{goal}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {submission.goals.custom.length > 0 && (
-            <div className="border rounded-md p-2">
-              <h4 className="text-xs font-semibold mb-1">Cele niestandardowe</h4>
-              <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                {submission.goals.custom.map((goal, index) => (
-                  <li key={`custom-${index}`}>{goal}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Cele */}
+      {submission.goals && (
+        <div>
+          <h3 className="text-lg font-medium">Cele</h3>
+          <div className="mt-2 space-y-3">
+            {submission.goals.traffic && submission.goals.traffic.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-500">Cele ruchu</p>
+                <ul className="list-disc pl-5 mt-1">
+                  {submission.goals.traffic.map((goal: string, index: number) => (
+                    <li key={`traffic-${index}`} className="text-sm">{goal}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {submission.goals.conversion && submission.goals.conversion.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-500">Cele konwersji</p>
+                <ul className="list-disc pl-5 mt-1">
+                  {submission.goals.conversion.map((goal: string, index: number) => (
+                    <li key={`conversion-${index}`} className="text-sm">{goal}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {submission.goals.positions && submission.goals.positions.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-500">Cele pozycji</p>
+                <ul className="list-disc pl-5 mt-1">
+                  {submission.goals.positions.map((goal: string, index: number) => (
+                    <li key={`position-${index}`} className="text-sm">{goal}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {submission.goals.custom && submission.goals.custom.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-500">Cele niestandardowe</p>
+                <ul className="list-disc pl-5 mt-1">
+                  {submission.goals.custom.map((goal: any, index: number) => (
+                    <li key={`custom-${index}`} className="text-sm">
+                      {typeof goal === 'object' && goal !== null && 'description' in goal
+                        ? goal.description
+                        : String(goal)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {(!submission.goals.traffic || submission.goals.traffic.length === 0) &&
+             (!submission.goals.conversion || submission.goals.conversion.length === 0) &&
+             (!submission.goals.positions || submission.goals.positions.length === 0) &&
+             (!submission.goals.custom || submission.goals.custom.length === 0) && (
+              <p className="text-gray-400">Nie podano celów</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Dodatkowe informacje */}
+      {submission.additionalInfo && (
+        <div>
+          <h3 className="text-lg font-medium">Dodatkowe informacje</h3>
+          <div className="mt-2 space-y-3">
+            {typeof submission.additionalInfo === 'object' && submission.additionalInfo !== null ? (
+              <>
+                {submission.additionalInfo.text && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Informacje</p>
+                    <p className="mt-1">{submission.additionalInfo.text}</p>
+                  </div>
+                )}
+                
+                {submission.additionalInfo.expectations && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Oczekiwania</p>
+                    <p className="mt-1">{submission.additionalInfo.expectations}</p>
+                  </div>
+                )}
+                
+                {submission.additionalInfo.otherInfo && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Inne informacje</p>
+                    <p className="mt-1">{submission.additionalInfo.otherInfo}</p>
+                  </div>
+                )}
+                
+                {submission.additionalInfo.challenges && Array.isArray(submission.additionalInfo.challenges) && submission.additionalInfo.challenges.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Wyzwania</p>
+                    <ul className="list-disc pl-5 mt-1">
+                      {submission.additionalInfo.challenges.map((challenge: any, index: number) => (
+                        <li key={`challenge-${index}`} className="text-sm">
+                          {typeof challenge === 'object' && challenge !== null
+                            ? String(Object.values(challenge)[0] || '')
+                            : String(challenge)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {!submission.additionalInfo.text && 
+                 !submission.additionalInfo.expectations && 
+                 !submission.additionalInfo.otherInfo && 
+                 (!submission.additionalInfo.challenges || !Array.isArray(submission.additionalInfo.challenges) || submission.additionalInfo.challenges.length === 0) && (
+                  <p className="text-gray-400">Brak dodatkowych informacji</p>
+                )}
+              </>
+            ) : (
+              <p>{String(submission.additionalInfo || '')}</p>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Konkurenci */}
+      {submission.competitors && submission.competitors.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium">Konkurenci</h3>
+          <div className="mt-2">
+            <ul className="list-disc pl-5">
+              {submission.competitors.map((competitor: any, index: number) => (
+                <li key={`competitor-${index}`} className="mb-2">
+                  {typeof competitor === 'object' && competitor !== null && 'url' in competitor ? (
+                    <>
+                      <div className="font-medium">{competitor.url}</div>
+                      {competitor.notes && (
+                        <div className="text-sm text-gray-600 mt-1">{competitor.notes}</div>
+                      )}
+                    </>
+                  ) : (
+                    String(competitor)
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+      
+      {/* Wyzwania */}
+      {submission.challenges && submission.challenges.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium">Wyzwania</h3>
+          <div className="mt-2">
+            <ul className="list-disc pl-5">
+              {submission.challenges.map((challenge: any, index: number) => (
+                <li key={`challenge-${index}`} className="text-sm">
+                  {typeof challenge === 'object' && challenge !== null
+                    ? String(Object.values(challenge)[0] || '')
+                    : String(challenge)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // Komponent wyświetlający szczegóły formularza strony dla klienta
-function ClientFormSubmissionDetails({ submission }: { submission: FormSubmission }) {
+function ClientFormSubmissionDetails({ submission }: { submission: any }): React.JSX.Element {
   // Bezpieczne renderowanie wartości
   const renderValue = (value: any, defaultValue: string = "Nie określono") => {
-    return value !== undefined && value !== null && value !== "" ? value : defaultValue;
+    if (value === undefined || value === null || value === "") return defaultValue;
+    if (typeof value === "object") {
+      // If it's a URL object, return the url property
+      if (value.url) return value.url;
+      // For other objects, try to convert to string or return default
+      try {
+        const str = JSON.stringify(value);
+        return str === '{}' ? defaultValue : str;
+      } catch {
+        return defaultValue;
+      }
+    }
+    return String(value);
   };
   
   // Formatowanie daty
@@ -899,58 +1069,90 @@ function ClientFormSubmissionDetails({ submission }: { submission: FormSubmissio
     return "Nieznana data";
   };
   
+  // Funkcja do określania kontrastu tekstu na podstawie koloru tła
+  const getContrastText = (hexColor: string) => {
+    // Domyślny kolor tekstu, jeśli kolor tła jest nieprawidłowy
+    if (!hexColor || hexColor === '#cccccc') return 'text-gray-800';
+    
+    // Konwertuj hex na RGB
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    
+    // Oblicz jasność (wg. YIQ formula)
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    
+    // Zwróć odpowiednią klasę koloru tekstu
+    return yiq >= 128 ? 'text-gray-800' : 'text-white';
+  };
+  
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-6 p-4">
+      {/* Dane podstawowe - na pełną szerokość */}
+      <div className="bg-white p-4 rounded-lg border shadow-sm">
+        <h3 className="text-sm font-medium text-primary mb-3">Dane podstawowe</h3>
+        <div className="space-y-2">
+          <div>
+            <span className="text-sm font-medium text-muted-foreground">Nazwa:</span> 
+            <span className="text-sm ml-2">{renderValue(submission.name)}</span>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-muted-foreground">Email:</span> 
+            <span className="text-sm ml-2">{renderValue(submission.email)}</span>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-muted-foreground">Data utworzenia:</span>
+            <span className="text-sm ml-2">{formatDateValue(submission.createdAt)}</span>
+          </div>
+          {submission.updatedAt && (
+            <div>
+              <span className="text-sm font-medium text-muted-foreground">Data aktualizacji:</span>
+              <span className="text-sm ml-2">{formatDateValue(submission.updatedAt)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Dane podstawowe</h3>
-            <div className="mt-1 space-y-1 text-sm">
-              <div>
-                <span className="font-medium">Nazwa:</span> {renderValue(submission.name)}
-              </div>
-              <div>
-                <span className="font-medium">Email:</span> {renderValue(submission.email)}
-              </div>
-              <div>
-                <span className="font-medium">Data utworzenia:</span>{" "}
-                {formatDateValue(submission.createdAt)}
-              </div>
-            </div>
-          </div>
-          
           {/* Opis */}
           {submission.description && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Opis projektu</h3>
-              <div className="mt-1 p-2 bg-gray-50 rounded-md">
+            <div className="bg-white p-4 rounded-lg border shadow-sm">
+              <h3 className="text-sm font-medium text-primary mb-3">Opis projektu</h3>
+              <div className="p-3 bg-gray-50 rounded-md">
                 <p className="text-sm whitespace-pre-wrap">{renderValue(submission.description)}</p>
               </div>
             </div>
           )}
           
           {/* Ustawienia strony */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Ustawienia strony</h3>
-            <div className="mt-1 space-y-1 text-sm">
+          <div className="bg-white p-4 rounded-lg border shadow-sm">
+            <h3 className="text-sm font-medium text-primary mb-3">Ustawienia strony</h3>
+            <div className="space-y-2">
               <div>
-                <span className="font-medium">Styl strony:</span> {renderValue(submission.websiteStyle)}
+                <span className="text-sm font-medium">Styl strony:</span> 
+                <span className="text-sm ml-2 block">{renderValue(submission.websiteStyle)}</span>
               </div>
               <div>
-                <span className="font-medium">Typ treści:</span> {renderValue(submission.contentType)}
+                <span className="text-sm font-medium">Typ treści:</span> 
+                <span className="text-sm ml-2 block">{renderValue(submission.contentType)}</span>
               </div>
               <div>
-                <span className="font-medium">Schemat kolorów:</span> {renderValue(submission.colorScheme)}
+                <span className="text-sm font-medium">Schemat kolorów:</span> 
+                <span className="text-sm ml-2 block">{renderValue(submission.colorScheme)}</span>
               </div>
               <div>
-                <span className="font-medium">Typ zdjęć:</span> {renderValue(submission.photoType)}
+                <span className="text-sm font-medium">Typ zdjęć:</span> 
+                <span className="text-sm ml-2 block">{renderValue(submission.photoType)}</span>
               </div>
               <div>
-                <span className="font-medium">Opcja domeny:</span> {renderValue(submission.domainOption)}
+                <span className="text-sm font-medium">Opcja domeny:</span> 
+                <span className="text-sm ml-2 block">{renderValue(submission.domainOption)}</span>
               </div>
               {submission.domainOption === 'own' && (
                 <div>
-                  <span className="font-medium">Własna domena:</span> {renderValue(submission.ownDomain)}
+                  <span className="text-sm font-medium">Własna domena:</span> 
+                  <span className="text-sm ml-2 block">{renderValue(submission.ownDomain)}</span>
                 </div>
               )}
             </div>
@@ -960,10 +1162,10 @@ function ClientFormSubmissionDetails({ submission }: { submission: FormSubmissio
         <div className="space-y-4">
           {/* Wybrane sekcje */}
           {submission.selectedSections?.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Wybrane sekcje</h3>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {submission.selectedSections.map((section, index) => (
+            <div className="bg-white p-4 rounded-lg border shadow-sm">
+              <h3 className="text-sm font-medium text-primary mb-3">Wybrane sekcje</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {submission.selectedSections.map((section: any, index: number) => (
                   <div key={`section-${index}`} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
                     {section}
                   </div>
@@ -974,29 +1176,94 @@ function ClientFormSubmissionDetails({ submission }: { submission: FormSubmissio
           
           {/* Niestandardowe kolory */}
           {submission.customColors && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Niestandardowe kolory</h3>
-              <div className="mt-1 grid grid-cols-3 gap-2">
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-4 h-4 rounded-full" 
-                    style={{ backgroundColor: submission.customColors.primary || '#cccccc' }}
-                  ></div>
-                  <span className="text-xs">Podstawowy</span>
+            <div className="bg-white p-4 rounded-lg border shadow-sm">
+              <h3 className="text-sm font-medium text-primary mb-3">Niestandardowe kolory</h3>
+              <div className="space-y-3">
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-muted-foreground">Podstawowy</span>
+                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{submission.customColors.primary || '#cccccc'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-full h-12 rounded-md border border-gray-200 relative"
+                      style={{ backgroundColor: submission.customColors.primary || '#cccccc' }}
+                    >
+                      <div className={`absolute inset-0 flex items-center justify-center ${getContrastText(submission.customColors.primary)}`}>
+                        <span className="text-xs font-medium">Podstawowy</span>
+                      </div>
+                      <button 
+                        className="absolute bottom-1 right-1 bg-white text-xs px-1.5 py-0.5 rounded shadow-sm opacity-80 hover:opacity-100"
+                        onClick={() => {
+                          navigator.clipboard.writeText(submission.customColors.primary || '#cccccc');
+                          toast.success("Kolor skopiowany do schowka");
+                        }}
+                      >
+                        Kopiuj
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-4 h-4 rounded-full" 
-                    style={{ backgroundColor: submission.customColors.secondary || '#cccccc' }}
-                  ></div>
-                  <span className="text-xs">Drugorzędny</span>
+                
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-muted-foreground">Drugorzędny</span>
+                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{submission.customColors.secondary || '#cccccc'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-full h-12 rounded-md border border-gray-200 relative"
+                      style={{ backgroundColor: submission.customColors.secondary || '#cccccc' }}
+                    >
+                      <div className={`absolute inset-0 flex items-center justify-center ${getContrastText(submission.customColors.secondary)}`}>
+                        <span className="text-xs font-medium">Drugorzędny</span>
+                      </div>
+                      <button 
+                        className="absolute bottom-1 right-1 bg-white text-xs px-1.5 py-0.5 rounded shadow-sm opacity-80 hover:opacity-100"
+                        onClick={() => {
+                          navigator.clipboard.writeText(submission.customColors.secondary || '#cccccc');
+                          toast.success("Kolor skopiowany do schowka");
+                        }}
+                      >
+                        Kopiuj
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-4 h-4 rounded-full" 
-                    style={{ backgroundColor: submission.customColors.accent || '#cccccc' }}
-                  ></div>
-                  <span className="text-xs">Akcentowy</span>
+                
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-muted-foreground">Akcentowy</span>
+                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{submission.customColors.accent || '#cccccc'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-full h-12 rounded-md border border-gray-200 relative"
+                      style={{ backgroundColor: submission.customColors.accent || '#cccccc' }}
+                    >
+                      <div className={`absolute inset-0 flex items-center justify-center ${getContrastText(submission.customColors.accent)}`}>
+                        <span className="text-xs font-medium">Akcentowy</span>
+                      </div>
+                      <button 
+                        className="absolute bottom-1 right-1 bg-white text-xs px-1.5 py-0.5 rounded shadow-sm opacity-80 hover:opacity-100"
+                        onClick={() => {
+                          navigator.clipboard.writeText(submission.customColors.accent || '#cccccc');
+                          toast.success("Kolor skopiowany do schowka");
+                        }}
+                      >
+                        Kopiuj
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-3 p-3 bg-gray-50 rounded-md">
+                  <div className="text-xs text-muted-foreground mb-2">Podgląd palety kolorów:</div>
+                  <div className="flex h-20 rounded-md overflow-hidden">
+                    <div className="flex-1" style={{ backgroundColor: submission.customColors.primary || '#cccccc' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: submission.customColors.secondary || '#cccccc' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: submission.customColors.accent || '#cccccc' }}></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1006,19 +1273,19 @@ function ClientFormSubmissionDetails({ submission }: { submission: FormSubmissio
       
       {/* Niestandardowe sekcje */}
       {submission.customSections?.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground">Niestandardowe sekcje</h3>
-          <div className="mt-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-            {submission.customSections.map((section, index) => (
-              <div key={`custom-section-${index}`} className="border rounded-md p-2">
+        <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <h3 className="text-sm font-medium text-primary mb-3">Niestandardowe sekcje</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {submission.customSections.map((section: any, index: number) => (
+              <div key={`custom-section-${index}`} className="border rounded-md p-3 bg-gray-50">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-xs font-semibold">{renderValue(section.name, `Sekcja ${index + 1}`)}</h4>
+                  <h4 className="text-sm font-semibold">{renderValue(section.name, `Sekcja ${index + 1}`)}</h4>
                   {section.price > 0 && (
-                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{section.price} PLN</span>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">{section.price} PLN</span>
                   )}
                 </div>
                 {section.description && (
-                  <p className="mt-1 text-xs">{section.description}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{section.description}</p>
                 )}
               </div>
             ))}

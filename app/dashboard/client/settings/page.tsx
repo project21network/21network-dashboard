@@ -39,11 +39,25 @@ export default function SettingsPage() {
     setIsSaving(true);
     
     try {
-      const success = await updateUserProfile({
+      // Przygotuj dane do aktualizacji, pomijając puste pola
+      const updateData: Partial<{
+        displayName: string;
+        company: string;
+        phone: string;
+      }> = {
         displayName: formData.displayName,
-        company: formData.company || undefined,
-        phone: formData.phone || undefined,
-      });
+      };
+      
+      // Dodaj pola company i phone tylko jeśli nie są puste
+      if (formData.company.trim() !== '') {
+        updateData.company = formData.company;
+      }
+      
+      if (formData.phone.trim() !== '') {
+        updateData.phone = formData.phone;
+      }
+      
+      const success = await updateUserProfile(updateData);
       
       if (success) {
         toast.success("Twoje dane zostały zaktualizowane");
