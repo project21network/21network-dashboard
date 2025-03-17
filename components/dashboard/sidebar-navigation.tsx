@@ -35,7 +35,6 @@ export function SidebarNavigation({ userRole }: SidebarNavigationProps) {
       { name: "Dashboard", href: "/dashboard", icon: <HomeOutlined /> },
       { name: "Moje zamówienia", href: "/dashboard/client/orders", icon: <ShoppingCartOutlined /> },
       { name: "Stwórz zamówienie", href: "/dashboard/client/create-order", icon: <FileAddOutlined /> },
-      { name: "Ankiety", href: "/dashboard/client/surveys", icon: <FormOutlined /> },
       { name: "Czat z administracją", href: "/dashboard/client/chat", icon: <MessageOutlined /> },
       { name: "Ustawienia", href: "/dashboard/client/settings", icon: <UserOutlined /> },
     ];
@@ -44,7 +43,6 @@ export function SidebarNavigation({ userRole }: SidebarNavigationProps) {
       { name: "Dashboard", href: "/dashboard", icon: <BarChartOutlined /> },
       { name: "Zarządzanie klientami", href: "/dashboard/admin/clients", icon: <UserOutlined /> },
       { name: "Przegląd zamówień", href: "/dashboard/admin/orders", icon: <ShoppingCartOutlined /> },
-      { name: "Ankiety klientów", href: "/dashboard/admin/surveys", icon: <FileTextOutlined /> },
       { name: "Formularze stron", href: "/dashboard/admin/form-submissions", icon: <FileAddOutlined /> },
       { name: "Formularze SEO", href: "/dashboard/admin/seo-submissions", icon: <SearchOutlined /> },
       { name: "Czat z klientami", href: "/dashboard/admin/chat", icon: <MessageOutlined /> },

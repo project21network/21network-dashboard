@@ -59,8 +59,18 @@ export function useUserProfile(): UseUserProfileReturn {
     if (!user || !userProfile) return false;
     
     try {
-      // Aktualizuj dane w Firestore
-      await updateDoc(doc(db, "users", user.uid), data);
+      // Usuń wszystkie pola z wartością undefined
+      const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as Record<string, any>);
+      
+      // Aktualizuj dane w Firestore tylko jeśli mamy co aktualizować
+      if (Object.keys(cleanData).length > 0) {
+        await updateDoc(doc(db, "users", user.uid), cleanData);
+      }
       
       // Aktualizuj dane w Auth, jeśli zmieniono displayName lub photoURL
       if (data.displayName || data.photoURL) {
@@ -71,7 +81,7 @@ export function useUserProfile(): UseUserProfileReturn {
       }
       
       // Aktualizuj lokalny stan
-      setUserProfile(prev => prev ? { ...prev, ...data } : null);
+      setUserProfile(prev => prev ? { ...prev, ...cleanData } : null);
       
       return true;
     } catch (err) {

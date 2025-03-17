@@ -11,6 +11,7 @@ export interface Order {
   title: string;
   description: string;
   status: OrderStatus;
+  type: "seo" | "website";
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;
